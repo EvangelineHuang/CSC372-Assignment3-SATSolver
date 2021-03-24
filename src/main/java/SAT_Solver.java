@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class SAT_Solver 
 {
-	int[][] clause;
+	ArrayList<Integer[]> clause = new ArrayList<Integer[]> () ;
 	ArrayList<Integer> symbol = new ArrayList<Integer> ();
 	int num = 0;//number of nodes
 	int max_c =0; // max number of satisfied clauses
@@ -39,18 +39,18 @@ public class SAT_Solver
 	 */
 	public boolean is_false(ArrayList<Integer> m)
 	{
-		for(int i = 0; i<clause.length;i++)
+		for(int i = 0; i<clause.size();i++)
 		{
 			int f = 0;
-			for(int j = 0; j<3; j++)
+			for(int j = 0; j<clause.get(i).length-2; j++)
 			{
 				//a clause is false when all the symbols are false
-				if(m.contains(-clause[i][j]))
+				if(m.contains(-clause.get(i)[j]))
 				{
 					f++;
 				}
 			}
-			if(f==3)
+			if(f==clause.get(i).length-2)
 			{
 				return true;
 			}
@@ -63,22 +63,22 @@ public class SAT_Solver
 	 */
 	public boolean is_true(ArrayList<Integer> m)
 	{
-		for(int i = 0; i<clause.length;i++)
+		for(int i = 0; i<clause.size();i++)
 		{
 			
 			int f = 0;
-			for(int j = 0; j<3; j++)
+			for(int j = 0; j<clause.get(i).length-2; j++)
 			{
-				if(m.contains(clause[i][j]))
+				if(m.contains(clause.get(i)[j]))
 				{
 					break;
 				}
-				if(!m.contains(clause[i][j]))
+				if(!m.contains(clause.get(i)[j]))
 				{
 					f++;
 				}
 			}
-			if(f==3)
+			if(f==clause.get(i).length-2)
 			{
 				return false;
 			}
@@ -86,12 +86,12 @@ public class SAT_Solver
 		return true;
 	}
 	/* DPLL: recursive DPLL search
-	 * c: array of all clauses
+	 * c: arraylist of all clauses
 	 * s: array of unassigned symbols
 	 * m: current model
 	 * true/false: true if satisfiable false otherwise
 	 */
-	public boolean DPLL(int[][] c, ArrayList<Integer> s, ArrayList<Integer> m)
+	public boolean DPLL(ArrayList<Integer[]> c, ArrayList<Integer> s, ArrayList<Integer> m)
 	{
 		num++;
 		//base cases 
@@ -119,7 +119,6 @@ public class SAT_Solver
 		{
 			//add literal in the unit clause to model and remove it from the symbol arraylist
 			int in = s.indexOf(Math.abs(unit));
-			
 			s.remove(in);			
 			m.add(unit);
 			return DPLL(c,s,m);
@@ -131,7 +130,6 @@ public class SAT_Solver
 		{
 			rest.add(s.get(i));
 		}
-		//rest.remove(0);
 		ArrayList<Integer> m2 = new ArrayList<Integer>();
 		for(int i = 0; i<m.size();i++)
 		{
@@ -144,10 +142,10 @@ public class SAT_Solver
 
 	/* find_pure_symbol: go through all the clauses to find the pure symbol
 	 * s: arraylist of symbol
-	 * c: 2D array of clauses
-	 * return a symbol if there is a pure symbol, return the max integer if no pure sumbol exists
+	 * c: arraylist of clauses
+	 * return a symbol if there is a pure symbol, return the max integer if no pure symbol exists
 	 */
-	public int find_pure_symbol(ArrayList<Integer> s, int[][] c)
+	public int find_pure_symbol(ArrayList<Integer> s, ArrayList<Integer[]> c)
 	{
 		
 		for(int i = 0; i < s.size(); i++)
@@ -156,30 +154,27 @@ public class SAT_Solver
 			boolean first = true;
 			boolean p = true;
 			outerloop:
-			for (int j = 0; j< c.length; j++)
+			for (int j = 0; j< c.size(); j++)
 			{
 				//check if the clause is already true
-				if(c[j][3] == Integer.MAX_VALUE)
-				{
-					
-					for (int l = 0; l<3; l++)
+				//System.out.println(c[j][c[j].length-2]);
+				if(c.get(j)[c.get(j).length-2] == Integer.MAX_VALUE)
+				{	
+					for (int l = 0; l<c.get(j).length-2; l++)
 					{ 
 						//check if the literal is the symbol we are checking, if so set the 
 						//variable temp to be the variale. 
-						if(Math.abs(c[j][l]) == Math.abs(temp) && first)	
+						if(Math.abs(c.get(j)[l]) == Math.abs(temp) && first)	
 						{
-							
-							temp = c[j][l];
+							temp = c.get(j)[l];
 							first = false;
 						}
 						//if there is literal different from temp, then the symbol is not pure, 
 						//break the loop and then check for next symbol.
-						else if (Math.abs(c[j][l]) == Math.abs(temp))
+						else if (Math.abs(c.get(j)[l]) == Math.abs(temp))
 						{
-							
-							if(temp != c[j][l])
+							if(temp != c.get(j)[l])
 							{
-								
 								p = false;
 								break outerloop;
 							}
@@ -190,14 +185,13 @@ public class SAT_Solver
 			//set the flag to negative in order to ignore the clause that are already true. 
 			if(p)
 			{
-				//System.out.println(p);
-				for(int m = 0; m<c.length;m++)
+				for(int m = 0; m<c.size();m++)
 				{
-					for(int n = 0; n<3; n++)
+					for(int n = 0; n<c.get(m).length-2; n++)
 					{
-						if(c[m][n] == temp)
+						if(c.get(m)[n] == temp)
 						{
-							c[m][3] = -Integer.MAX_VALUE;
+							c.get(m)[c.get(m).length-2] = -Integer.MAX_VALUE;
 							break;
 						}
 					}
@@ -209,31 +203,31 @@ public class SAT_Solver
 		return Integer.MAX_VALUE;
 	}
 	/* find_unit_clause: find unit clause in the clause array
-	 * clause: array of clauses
+	 * clause: arraylist of clauses
 	 * s: arraylist of all the symbols
-	 * return the symbol if a unit clause exists, otherwise retunr Max_integer
+	 * return the symbol if a unit clause exists, otherwise return Max_integer
 	 */
-	public int find_unit_clause(int[][] clause, ArrayList<Integer> s)
+	public int find_unit_clause(ArrayList<Integer[]> clause, ArrayList<Integer> s)
 	{
 		
-		for(int j = 0; j<clause.length;j++)
+		for(int j = 0; j<clause.size();j++)
 		{
 			//check if the clause has already been checked
-			if(clause[j][4] == Integer.MAX_VALUE)
+			if(clause.get(j)[clause.get(j).length-1] == Integer.MAX_VALUE)
 			{
-				int temp = clause[j][0];
+				int temp = clause.get(j)[0];
 				int inc = 1;
-				for(int m = 1; m<3;m++)
+				for(int m = 1; m<clause.get(j).length-2;m++)
 				{
-					if(clause[j][m] == temp)
+					if(clause.get(j)[m] == temp)
 					{	
 						inc ++;						
 					}				
 				}
-				if(inc == 3 && s.contains(Math.abs(temp)))
+				if(inc == clause.get(j).length-2 && s.contains(Math.abs(temp)))
 				{
 					//set checked flag to negative
-					clause[j][4] = -Integer.MAX_VALUE;
+					clause.get(j)[clause.get(j).length-1] = -Integer.MAX_VALUE;
 					return temp;
 				}
 			}
@@ -252,11 +246,9 @@ public class SAT_Solver
 			System.out.println(sat);
 			return true;
 		}
-		//System.out.println(max_c);
 		return false;
 	}
 	/* WalkSAT: use WalkSAT algorithm to solve SAT problems
-	 * c: 2D array of clauses
 	 * p: probability to choose between random walk and minimization
 	 * max_f: the max number of flips
 	 * return model or failure;
@@ -281,11 +273,9 @@ public class SAT_Solver
 			}
 		}
 		
-		
 		//check each clause use the early_termination function 
 		for(int j = 0; j < max_f; j++)
 		{
-			//System.out.println(j);
 			flips++;
 			if(is_true(model))
 			{
@@ -294,7 +284,7 @@ public class SAT_Solver
 			//get an arraylist of false clauses
 			ArrayList<Integer[]> falseC = findfalse(model);
 			//find the max number of satisfied clauses
-			int c_max = clause.length - falseC.size();
+			int c_max = clause.size() - falseC.size();
 			if(c_max > max_c)
 			{
 				max_c = c_max;
@@ -309,7 +299,7 @@ public class SAT_Solver
 			if(ran_d <= p)
 			{
 				//flip a symbol randomly 
-				int ran_sym = rand.nextInt(3);
+				int ran_sym = rand.nextInt(cls.length-2);
 				Integer sym = cls[ran_sym];
 				int in;
 				if(model.contains(sym))
@@ -345,10 +335,9 @@ public class SAT_Solver
 	 */
 	public int Max_sat(Integer[] c, ArrayList<Integer> model) 
 	{
-		//int[][] max_array = new int[3][2];
 		int max_sat = 0;
 		int sati_sym_ind = 0;
-		for(int m = 0; m<3;m++)
+		for(int m = 0; m<c.length-2;m++)
 		{   
 			int tr = c[m];
 			int ind;
@@ -365,11 +354,11 @@ public class SAT_Solver
 			find = model.get(ind);
 			model.set(ind, -find);
 			int sati = 0; 
-			for (int i = 0; i<clause.length; i++)
+			for (int i = 0; i<clause.size(); i++)
 			{
-				for(int j = 0; j<3; j++)
+				for(int j = 0; j<clause.get(i).length-2; j++)
 				{
-					if(model.contains(clause[i][j]))
+					if(model.contains(clause.get(i)[j]))
 					{
 						sati++;							
 						break;
@@ -395,20 +384,25 @@ public class SAT_Solver
 	public ArrayList<Integer[]> findfalse(ArrayList<Integer> model)
 	{
 		ArrayList<Integer[]> falseClause = new ArrayList<Integer[]> ();
-		for(int i =0; i<clause.length;i++)
+		for(int i =0; i<clause.size();i++)
 		{
 			int f = 0;
-			for(int j = 0; j<3; j++)
+			for(int j = 0; j<clause.get(i).length-2; j++)
 			{
-				if(!model.contains(clause[i][j]))
+				if(!model.contains(clause.get(i)[j]))
 				{
 					f++;
 				}
 			}
 			//add the false clause to the arraylist 
-			if(f==3)
+			if(f==clause.get(i).length-2)
 			{
-				Integer[] temp = {clause[i][0],clause[i][1],clause[i][2]};
+				Integer[] temp = new Integer[clause.get(i).length-2];
+				for(int l = 0; l<clause.get(i).length-2; l++)
+				{
+					//System.out.println(l);
+					temp[l] = clause.get(i)[l];
+				}
 				falseClause.add(temp);
 			}
 		}
@@ -420,26 +414,18 @@ public class SAT_Solver
 	 */
 	public void readFile(File file)
 	{
-		//File file = new File(filename);
 	    Scanner scanner;	   
 		try {
 			scanner = new Scanner(file);
 			String data = scanner.nextLine();
-			//String[] temp = data.trim().split("\\s");
-			if(data.charAt(0) == 'c')
+			while(data.charAt(0)!= 'p')
 			{	
 				data = scanner.nextLine();
 			}
-			String[] temp = data.split("\\s");
-			//data = scanner.nextLine();
-			//temp = data.split("\\s");
+			String[] temp = data.trim().split("\\s");
 			//size is the size of the 2D array of clause
 			//size2 is the size of symbols that is read from the file 
-			//System.out.print(temp[0]);
-			int size = Integer.parseInt(temp[3]);
 			int size2 = Integer.parseInt(temp[2]);
-			//symbol = new int[size];
-			clause = new int[size][5];
 			int i = 0; 
 			while(scanner.hasNextLine())
 			{
@@ -447,18 +433,19 @@ public class SAT_Solver
 				temp = data.trim().split("\\s");
 				if(data.charAt(0) != 'c')
 				{
-					int[] i_temp = new int[5];
-					for(int j = 0; j<3;j++)
+					int size = temp.length+1;
+					Integer[] i_temp = new Integer[size];
+					int j = 0; 
+					while(j<size-2)
 					{
-						//System.out.println(temp[j]);
 						i_temp[j] = Integer.parseInt(temp[j]);
-						//System.out.println(i_temp[j]);
+						j++;
 					}
 					//set flags for pure symbol and unit clause
-					i_temp[3] = Integer.MAX_VALUE;
-					i_temp[4] = Integer.MAX_VALUE;
+					i_temp[j] = Integer.MAX_VALUE;
+					i_temp[j+1] = Integer.MAX_VALUE;
 					
-					clause[i] = i_temp;
+					clause.add(i, i_temp);
 					i++;
 				}
 			}
